@@ -1,0 +1,46 @@
+# Shared Matplotlib style for this repo's figures.
+# Loaded via plot_utils.set_plotting_style(); keep this file the single
+# source of truth for rcParams so figures stay visually consistent.
+#
+# Sizes are tuned for paper figures assembled from same-scale panels (e.g.
+# a ~4.7"-wide multi-panel figure) -- all figures in the paper should be
+# built at that scale, rather than overriding these per-script.
+
+# ---- fonts ----
+font.family: sans-serif
+font.sans-serif: Helvetica, Arial, DejaVu Sans
+font.size: 6.5
+
+axes.titlesize: 7.5
+axes.labelsize: 6.5
+xtick.labelsize: 5.5
+ytick.labelsize: 5.5
+legend.fontsize: 5.5
+
+# ---- axes / spines ----
+axes.spines.top: False
+axes.spines.right: False
+axes.linewidth: 0.8
+axes.labelpad: 4.0
+axes.grid: False
+
+# ---- ticks ----
+xtick.direction: out
+ytick.direction: out
+xtick.major.size: 3
+ytick.major.size: 3
+xtick.major.width: 0.8
+ytick.major.width: 0.8
+
+# ---- lines / markers ----
+lines.linewidth: 1.5
+lines.markersize: 5
+patch.linewidth: 0.5
+
+# ---- legend ----
+legend.frameon: False
+
+# ---- figure / saving ----
+figure.dpi: 120
+savefig.dpi: 300
+savefig.bbox: tight
