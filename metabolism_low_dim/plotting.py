@@ -18,13 +18,6 @@ def plot_phase_diagram(
     empirical_series: list[tuple[str, np.ndarray, np.ndarray]] | None = None,
 ) -> None:
     protein_fraction = mass_fractions[:, 0]
-    nucleic_acid_fraction = mass_fractions[:, 2]
-    na_to_protein_ratio = np.divide(
-        nucleic_acid_fraction,
-        protein_fraction,
-        out=np.zeros_like(nucleic_acid_fraction),
-        where=protein_fraction > 0.0,
-    )
     nc_percent = 100.0 * nc_ratio
     pc_percent = 100.0 * pc_ratio
 
@@ -33,7 +26,7 @@ def plot_phase_diagram(
     hb = ax.hexbin(
         nc_percent,
         pc_percent,
-        C=na_to_protein_ratio,
+        C=protein_fraction,
         reduce_C_function=np.mean,
         gridsize=70,
         mincnt=1,
@@ -77,6 +70,6 @@ def plot_phase_diagram(
     ax.legend(loc="best", frameon=True)
 
     cbar = fig.colorbar(hb, ax=ax, shrink=0.95)
-    cbar.set_label("Nucleic-acid/protein mass ratio")
+    cbar.set_label("Protein mass fraction")
     fig.savefig(outpath, dpi=220)
     plt.close(fig)
