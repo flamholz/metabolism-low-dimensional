@@ -49,17 +49,14 @@ rule transform_makino2003:
         "python {input.script}"
 
 
-rule constrained_elemental_stoich:
+rule sample_elemental_stoich:
     input:
-        script="scripts/constrained_elemental_stoich.py",
+        script="scripts/sample_elemental_stoich.py",
         package=[
             "metabolism_low_dim/__init__.py",
             "metabolism_low_dim/constants.py",
             "metabolism_low_dim/data_io.py",
             "metabolism_low_dim/model.py",
-            "metabolism_low_dim/plot_utils.py",
-            "metabolism_low_dim/plotting.py",
-            "metabolism_low_dim/plotting.mplstyle",
         ],
         mass_fraction_ranges="data/mass_fraction_ranges.csv",
         element_ranges="data/element_ranges.csv",
@@ -68,15 +65,32 @@ rule constrained_elemental_stoich:
         na_residue_element_counts="data/na_residue_element_counts.csv",
         na_gc_content="data/na_gc_content.csv",
         na_pool_mix_mean="data/na_pool_mix_mean.csv",
+    output:
+        CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
+    shell:
+        "python {input.script} --samples-csv " + CONSTRAINED_ELEMENTAL_STOICH_SAMPLES
+
+
+rule plot_elemental_stoich:
+    input:
+        script="scripts/plot_elemental_stoich.py",
+        package=[
+            "metabolism_low_dim/__init__.py",
+            "metabolism_low_dim/constants.py",
+            "metabolism_low_dim/data_io.py",
+            "metabolism_low_dim/plotting.py",
+            "metabolism_low_dim/plot_utils.py",
+            "metabolism_low_dim/plotting.mplstyle",
+        ],
+        samples_csv=CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
         martiny="data/martiny_table_s2_latitude_metadata.csv",
         vrede_empirical="data/vrede2002_empirical.csv",
         makino_empirical="data/makino2003_empirical.csv",
     output:
         CONSTRAINED_ELEMENTAL_STOICH_PLOT,
-        CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
     shell:
         "python {input.script} "
+        "--samples-csv {input.samples_csv} "
         "--plot-path " + CONSTRAINED_ELEMENTAL_STOICH_PLOT + " "
-        "--samples-csv " + CONSTRAINED_ELEMENTAL_STOICH_SAMPLES + " "
         "--empirical-csv {input.vrede_empirical} --empirical-label 'Vrede 2002' "
         "--empirical-csv {input.makino_empirical} --empirical-label 'Makino 2003'"

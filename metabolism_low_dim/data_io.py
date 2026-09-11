@@ -171,3 +171,30 @@ def save_samples_csv(
     header = f"{macro_header},N_to_C,O_to_C,P_to_C"
     matrix = np.column_stack((mass_fractions, nc_ratio, oc_ratio, pc_ratio))
     np.savetxt(outpath, matrix, delimiter=",", header=header, comments="")
+
+
+def load_samples_csv(csv_path: Path) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    """Load a samples CSV written by ``save_samples_csv``.
+
+    Returns
+    -------
+    mass_fractions : np.ndarray
+        Columns in ``MACROMOLECULES`` order, as written by ``save_samples_csv``.
+    ratios : dict of str to np.ndarray
+        Any of the ``N_to_C``/``O_to_C``/``P_to_C`` columns present in the file.
+    """
+    with csv_path.open(newline="", encoding="utf-8") as f:
+        header = f.readline().strip().split(",")
+    matrix = np.loadtxt(csv_path, delimiter=",", skiprows=1)
+
+    macro_cols = [i for i, name in enumerate(header) if name in MACROMOLECULES]
+    if len(macro_cols) != len(MACROMOLECULES):
+        raise ValueError(f"{csv_path} is missing one or more macromolecule columns")
+    mass_fractions = matrix[:, macro_cols]
+
+    ratios = {
+        name: matrix[:, header.index(name)]
+        for name in ("N_to_C", "O_to_C", "P_to_C")
+        if name in header
+    }
+    return mass_fractions, ratios
