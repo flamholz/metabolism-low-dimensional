@@ -50,7 +50,7 @@ rule transform_makino2003:
 
 rule phase_diagram:
     input:
-        script="scripts/phase_diagram.py",
+        script="scripts/constrained_elemental_stoich.py",
         package=[
             "metabolism_low_dim/__init__.py",
             "metabolism_low_dim/constants.py",
