@@ -5,14 +5,15 @@ here resolves its own paths relative to the repo root or its own file
 location, not the caller's cwd, so no `workdir:` directive is needed).
 """
 
-PHASE_DIAGRAM_OUTDIR = "figures/phase_diagram"
+CONSTRAINED_ELEMENTAL_STOICH_PLOT = "figures/constrained_elemental_stoich.png"
+CONSTRAINED_ELEMENTAL_STOICH_SAMPLES = "output/elemental_stoich_samples.csv"
 
 rule all:
     input:
         "figures/elemental_FBA_panels.png",
         "figures/elemental_FBA_panels.svg",
-        f"{PHASE_DIAGRAM_OUTDIR}/phase_diagram.png",
-        f"{PHASE_DIAGRAM_OUTDIR}/phase_diagram_samples.csv",
+        CONSTRAINED_ELEMENTAL_STOICH_PLOT,
+        CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
 
 
 rule fba_plots:
@@ -48,7 +49,7 @@ rule transform_makino2003:
         "python {input.script}"
 
 
-rule phase_diagram:
+rule constrained_elemental_stoich:
     input:
         script="scripts/constrained_elemental_stoich.py",
         package=[
@@ -71,10 +72,11 @@ rule phase_diagram:
         vrede_empirical="data/vrede2002_empirical.csv",
         makino_empirical="data/makino2003_empirical.csv",
     output:
-        f"{PHASE_DIAGRAM_OUTDIR}/phase_diagram.png",
-        f"{PHASE_DIAGRAM_OUTDIR}/phase_diagram_samples.csv",
+        CONSTRAINED_ELEMENTAL_STOICH_PLOT,
+        CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
     shell:
         "python {input.script} "
-        "--outdir " + PHASE_DIAGRAM_OUTDIR + " "
+        "--plot-path " + CONSTRAINED_ELEMENTAL_STOICH_PLOT + " "
+        "--samples-csv " + CONSTRAINED_ELEMENTAL_STOICH_SAMPLES + " "
         "--empirical-csv {input.vrede_empirical} --empirical-label 'Vrede 2002' "
         "--empirical-csv {input.makino_empirical} --empirical-label 'Makino 2003'"

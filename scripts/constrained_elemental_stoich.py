@@ -61,10 +61,16 @@ def parse_args() -> argparse.Namespace:
         help="Random seed for reproducibility.",
     )
     parser.add_argument(
-        "--outdir",
+        "--plot-path",
         type=Path,
-        default=Path("outputs"),
-        help="Output directory (default: outputs).",
+        default=Path("figures/constrained_elemental_stoich.png"),
+        help="Output path for the plot (default: figures/constrained_elemental_stoich.png).",
+    )
+    parser.add_argument(
+        "--samples-csv",
+        type=Path,
+        default=Path("output/elemental_stoich_samples.csv"),
+        help="Output path for the sampled CSV (default: output/elemental_stoich_samples.csv).",
     )
     parser.add_argument(
         "--protein-aa-mode",
@@ -216,9 +222,10 @@ def run(args: argparse.Namespace) -> tuple[Path, Path]:
     oc_ratio = to_molar_ratio(totals["O"], totals["C"], "O", "C")
     pc_ratio = to_molar_ratio(totals["P"], totals["C"], "P", "C")
 
-    args.outdir.mkdir(parents=True, exist_ok=True)
-    samples_csv = args.outdir / "phase_diagram_samples.csv"
-    plot_png = args.outdir / "phase_diagram.png"
+    plot_png = args.plot_path
+    samples_csv = args.samples_csv
+    plot_png.parent.mkdir(parents=True, exist_ok=True)
+    samples_csv.parent.mkdir(parents=True, exist_ok=True)
 
     save_samples_csv(samples_csv, mass_fractions, nc_ratio, oc_ratio, pc_ratio)
     plot_phase_diagram(

@@ -1,5 +1,5 @@
 # Generated Monte Carlo samples (regenerate via `snakemake`; large, not meant to be diffed)
-figures/phase_diagram/phase_diagram_samples.csv
+output/
 
 # Snakemake's own bookkeeping directory
 .snakemake/
