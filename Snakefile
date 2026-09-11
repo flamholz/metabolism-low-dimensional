@@ -3,10 +3,6 @@
 Run everything with `snakemake --cores 1` from the repo root (every script
 here resolves its own paths relative to the repo root or its own file
 location, not the caller's cwd, so no `workdir:` directive is needed).
-
-Note: data/base_mass_fractions.csv and data/na_observed_mean.csv are not
-read by any script in this pipeline (unused source data, kept for
-reference) and so are not declared as inputs below.
 """
 
 PHASE_DIAGRAM_OUTDIR = "figures/phase_diagram"
