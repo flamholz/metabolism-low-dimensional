@@ -1,3 +1,9 @@
+# Generated Monte Carlo samples (regenerate via `snakemake`; large, not meant to be diffed)
+figures/phase_diagram/phase_diagram_samples.csv
+
+# Snakemake's own bookkeeping directory
+.snakemake/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

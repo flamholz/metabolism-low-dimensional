@@ -10,6 +10,9 @@ import sys
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from plot_utils import set_plotting_style
 
 from metabolism_low_dim.data_io import (
     load_element_ranges,
@@ -139,6 +142,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def run(args: argparse.Namespace) -> tuple[Path, Path]:
+    set_plotting_style()
     rng = np.random.default_rng(args.seed)
 
     mass_fraction_ranges = load_mass_fraction_ranges(args.data_dir / "mass_fraction_ranges.csv")
