@@ -970,7 +970,7 @@ wheels = [
 [[package]]
 name = "metabolism-low-dimensional"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "cobra" },
     { name = "cvxpy" },

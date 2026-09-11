@@ -5,14 +5,8 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-import sys
 
 import numpy as np
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from plot_utils import set_plotting_style
 
 from metabolism_low_dim.data_io import (
     load_element_ranges,
@@ -31,6 +25,7 @@ from metabolism_low_dim.model import (
     sample_mass_fractions_from_ranges,
     to_molar_ratio,
 )
+from metabolism_low_dim.plot_utils import set_plotting_style
 from metabolism_low_dim.plotting import plot_phase_diagram
 
 

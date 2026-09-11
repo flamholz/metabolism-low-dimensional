@@ -56,7 +56,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-from plot_utils import get_palette, set_plotting_style
+from metabolism_low_dim.plot_utils import get_palette, set_plotting_style
 
 # ---------------------------------------------------------------- configuration
 # Which three fluxes to use as axes. sign = +1 to plot the flux as-is,

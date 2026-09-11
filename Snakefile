@@ -22,8 +22,8 @@ rule all:
 rule fba_plots:
     input:
         script="scripts/FBA_model_plots.py",
-        plot_utils="scripts/plot_utils.py",
-        style="scripts/plotting.mplstyle",
+        plot_utils="metabolism_low_dim/plot_utils.py",
+        style="metabolism_low_dim/plotting.mplstyle",
         sbml="SBML/elemental_fba.xml",
     output:
         "figures/elemental_FBA_panels.png",
@@ -55,14 +55,14 @@ rule transform_makino2003:
 rule phase_diagram:
     input:
         script="scripts/phase_diagram.py",
-        plot_utils="scripts/plot_utils.py",
-        style="scripts/plotting.mplstyle",
         package=[
             "metabolism_low_dim/__init__.py",
             "metabolism_low_dim/constants.py",
             "metabolism_low_dim/data_io.py",
             "metabolism_low_dim/model.py",
+            "metabolism_low_dim/plot_utils.py",
             "metabolism_low_dim/plotting.py",
+            "metabolism_low_dim/plotting.mplstyle",
         ],
         mass_fraction_ranges="data/mass_fraction_ranges.csv",
         element_ranges="data/element_ranges.csv",
