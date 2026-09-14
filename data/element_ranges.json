@@ -7,6 +7,9 @@
     "nucleic_acid": {"C": [0.31, 0.38], "N": [0.14, 0.18], "O": [0.30, 0.40], "P": [0.080, 0.105]},
     "membrane_lipid": {"C": [0.60, 0.78], "N": [0.000, 0.020], "O": [0.10, 0.30], "P": [0.010, 0.050]},
     "storage_lipid": {"C": [0.72, 0.84], "N": [0.000, 0.005], "O": [0.04, 0.16], "P": [0.000, 0.002]},
-    "metabolite": {"C": [0.20, 0.45], "N": [0.02, 0.10], "O": [0.22, 0.50], "P": [0.08, 0.30]}
+    "metabolite": {"C": [0.20, 0.45], "N": [0.02, 0.19], "O": [0.22, 0.50], "P": [0.00, 0.30]}
+  },
+  "notes": {
+    "metabolite": "N and P are sampled independently within this pool, but real metabolites don't co-vary that way: N-rich ones (free amino acids, e.g. glutamine at 19.2% N by formula C5H10N2O3) are typically P-free, while P-rich ones (nucleotide triphosphates, e.g. ATP at 18.3% P) have moderate N (13.8%). The N ceiling (was 0.10) and P floor (was 0.08) were both too tight to represent either extreme realistically -- the P floor in particular forced every sample to carry P even when metabolite mass was being used to add N, which is not how real amino-acid-dominated metabolite pools behave. Widened after checking against Makino et al. (2003) E. coli data, which required both a higher N ceiling and a near-zero P floor to be reachable by the sampler."
   }
 }
