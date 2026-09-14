@@ -122,7 +122,7 @@ def run(args: argparse.Namespace) -> Path:
     )
     observed_aa_mean = load_observed_aa_mean(args.data_dir / "aa_observed_mean.csv", aa_codes)
     na_residue_element_counts = load_na_residue_element_counts(
-        args.data_dir / "na_residue_element_counts.csv"
+        args.data_dir / "na_residue_element_counts.json"
     )
     na_gc_mean, na_gc_concentration_from_file = load_na_gc_content(args.data_dir / "na_gc_content.csv")
     na_pool_mix_mean = load_na_pool_mix_mean(args.data_dir / "na_pool_mix_mean.csv")

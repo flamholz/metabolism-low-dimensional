@@ -1,0 +1,50 @@
+{
+  "description": "Elemental composition of ribo-/deoxyribonucleotide monophosphates. 'free' is the hydrated monophosphate as it exists outside a chain (e.g. AMP); 'polymer' is the dehydrated in-chain residue (free minus one H2O, released per phosphodiester bond formed with the next nucleotide). The model samples polymerized RNA/DNA (see metabolism_low_dim/model.py::sample_nucleic_acid_from_gc), so it uses 'polymer'. Molecular weights in each note use the same atomic masses as metabolism_low_dim/constants.py::ATOMIC_MASS.",
+  "elements": ["C", "H", "N", "O", "P"],
+  "pools": {
+    "RNA": {
+      "A": {
+        "free": {"C": 10, "H": 14, "N": 5, "O": 7, "P": 1},
+        "polymer": {"C": 10, "H": 12, "N": 5, "O": 6, "P": 1},
+        "note": "free = adenosine 5'-monophosphate (AMP), MW 347.22; polymer = free minus H2O, MW 329.21"
+      },
+      "C": {
+        "free": {"C": 9, "H": 14, "N": 3, "O": 8, "P": 1},
+        "polymer": {"C": 9, "H": 12, "N": 3, "O": 7, "P": 1},
+        "note": "free = cytidine 5'-monophosphate (CMP), MW 323.20; polymer = free minus H2O, MW 305.18"
+      },
+      "G": {
+        "free": {"C": 10, "H": 14, "N": 5, "O": 8, "P": 1},
+        "polymer": {"C": 10, "H": 12, "N": 5, "O": 7, "P": 1},
+        "note": "free = guanosine 5'-monophosphate (GMP), MW 363.22; polymer = free minus H2O, MW 345.21"
+      },
+      "U": {
+        "free": {"C": 9, "H": 13, "N": 2, "O": 9, "P": 1},
+        "polymer": {"C": 9, "H": 11, "N": 2, "O": 8, "P": 1},
+        "note": "free = uridine 5'-monophosphate (UMP), MW 324.18; polymer = free minus H2O, MW 306.17"
+      }
+    },
+    "DNA": {
+      "A": {
+        "free": {"C": 10, "H": 14, "N": 5, "O": 6, "P": 1},
+        "polymer": {"C": 10, "H": 12, "N": 5, "O": 5, "P": 1},
+        "note": "free = 2'-deoxyadenosine 5'-monophosphate (dAMP), MW 331.22; polymer = free minus H2O, MW 313.21"
+      },
+      "C": {
+        "free": {"C": 9, "H": 14, "N": 3, "O": 7, "P": 1},
+        "polymer": {"C": 9, "H": 12, "N": 3, "O": 6, "P": 1},
+        "note": "free = 2'-deoxycytidine 5'-monophosphate (dCMP), MW 307.20; polymer = free minus H2O, MW 289.18"
+      },
+      "G": {
+        "free": {"C": 10, "H": 14, "N": 5, "O": 7, "P": 1},
+        "polymer": {"C": 10, "H": 12, "N": 5, "O": 6, "P": 1},
+        "note": "free = 2'-deoxyguanosine 5'-monophosphate (dGMP), MW 347.22; polymer = free minus H2O, MW 329.21"
+      },
+      "T": {
+        "free": {"C": 10, "H": 15, "N": 2, "O": 8, "P": 1},
+        "polymer": {"C": 10, "H": 13, "N": 2, "O": 7, "P": 1},
+        "note": "free = thymidine 5'-monophosphate (dTMP), MW 322.21; polymer = free minus H2O, MW 304.20"
+      }
+    }
+  }
+}

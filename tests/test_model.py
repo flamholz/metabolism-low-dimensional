@@ -7,10 +7,11 @@ import numpy as np
 from metabolism_low_dim.constants import ATOMIC_MASS
 from metabolism_low_dim.constants import MACROMOLECULES
 from metabolism_low_dim.model import (
+    _sample_ranged_elements_with_closure,
     compute_elemental_totals,
     sample_mass_fractions_from_ranges,
     sample_nucleic_acid_from_gc,
-    sample_protein_cn_from_aa,
+    sample_protein_cno_from_aa,
     to_molar_ratio,
 )
 
@@ -112,7 +113,7 @@ class TestModel(unittest.TestCase):
                 expected += mass_fractions[:, i] * element_fractions[macro][element]
             self.assertTrue(np.allclose(totals[element], expected, atol=1e-12))
 
-    def test_sample_protein_cn_from_aa_single_residue(self) -> None:
+    def test_sample_protein_cno_from_aa_single_residue(self) -> None:
         rng = np.random.default_rng(7)
         aa_codes = ("X",)
         residue_element_counts = {
@@ -120,7 +121,7 @@ class TestModel(unittest.TestCase):
         }
         observed_aa_mean = {"X": 1.0}
 
-        c_frac, n_frac = sample_protein_cn_from_aa(
+        c_frac, n_frac, o_frac = sample_protein_cno_from_aa(
             rng=rng,
             n_samples=10,
             concentration=250.0,
@@ -137,9 +138,32 @@ class TestModel(unittest.TestCase):
         )
         expected_c = (5 * ATOMIC_MASS["C"]) / residue_mass
         expected_n = (1 * ATOMIC_MASS["N"]) / residue_mass
+        expected_o = (2 * ATOMIC_MASS["O"]) / residue_mass
 
         self.assertTrue(np.allclose(c_frac, expected_c, atol=1e-12))
         self.assertTrue(np.allclose(n_frac, expected_n, atol=1e-12))
+        self.assertTrue(np.allclose(o_frac, expected_o, atol=1e-12))
+
+    def test_sample_ranged_elements_with_closure_enforces_mass_balance(self) -> None:
+        rng = np.random.default_rng(7)
+        # metabolite's own ranges allow C+N+O+P up to 1.35 if drawn
+        # independently at their extremes, so this exercises real rejection.
+        ranges = {
+            "C": (0.20, 0.45),
+            "N": (0.02, 0.10),
+            "O": (0.22, 0.50),
+            "P": (0.08, 0.30),
+        }
+        sampled = _sample_ranged_elements_with_closure(rng, 5000, ranges)
+
+        for element in ranges:
+            self.assertEqual(sampled[element].shape, (5000,))
+            low, high = ranges[element]
+            self.assertTrue(np.all(sampled[element] >= low))
+            self.assertTrue(np.all(sampled[element] <= high))
+
+        total = sum(sampled[element] for element in ranges)
+        self.assertTrue(np.all(total <= 1.0 + 1e-12))
 
     def test_sample_nucleic_acid_from_gc_fixed_composition(self) -> None:
         rng = np.random.default_rng(7)

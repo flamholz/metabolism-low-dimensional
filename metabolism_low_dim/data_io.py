@@ -1,8 +1,9 @@
-"""CSV input/output helpers for phase-diagram workflows."""
+"""CSV/JSON input/output helpers for phase-diagram workflows."""
 
 from __future__ import annotations
 
 import csv
+import json
 from pathlib import Path
 
 import numpy as np
@@ -114,20 +115,28 @@ def load_empirical_ratios(csv_path: Path) -> tuple[np.ndarray, np.ndarray]:
 
 
 def load_na_residue_element_counts(
-    csv_path: Path,
+    json_path: Path,
 ) -> dict[str, dict[str, dict[str, int]]]:
+    """Load dehydrated in-chain nucleotide residue element counts.
+
+    The source file also carries each nucleotide's free (hydrated)
+    monophosphate counts for reference, but the model samples polymerized
+    RNA/DNA, so this returns the 'polymer' (dehydrated) counts.
+    """
+    with json_path.open(encoding="utf-8") as f:
+        data = json.load(f)
+
+    pools = data["pools"]
     counts: dict[str, dict[str, dict[str, int]]] = {pool: {} for pool in NA_POOLS}
-    with csv_path.open(newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            pool = row["pool"].strip().upper()
-            nt = row["nucleotide"].strip().upper()
-            if pool not in NA_POOLS:
-                raise ValueError(f"Unknown nucleic-acid pool in {csv_path}: {pool}")
-            counts[pool][nt] = {element: int(row[element]) for element in NA_ELEMENTS}
+    for pool in pools:
+        if pool not in NA_POOLS:
+            raise ValueError(f"Unknown nucleic-acid pool in {json_path}: {pool}")
+        for nt, forms in pools[pool].items():
+            counts[pool][nt.upper()] = {element: int(forms["polymer"][element]) for element in NA_ELEMENTS}
 
     for pool in NA_POOLS:
         if not counts[pool]:
-            raise ValueError(f"No nucleotides found in {csv_path} for pool {pool}")
+            raise ValueError(f"No nucleotides found in {json_path} for pool {pool}")
     return counts
 
 

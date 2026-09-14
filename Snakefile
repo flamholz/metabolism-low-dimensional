@@ -62,7 +62,7 @@ rule sample_elemental_stoich:
         element_ranges="data/element_ranges.csv",
         aa_residue_element_counts="data/aa_residue_element_counts.csv",
         aa_observed_mean="data/aa_observed_mean.csv",
-        na_residue_element_counts="data/na_residue_element_counts.csv",
+        na_residue_element_counts="data/na_residue_element_counts.json",
         na_gc_content="data/na_gc_content.csv",
         na_pool_mix_mean="data/na_pool_mix_mean.csv",
     output:
