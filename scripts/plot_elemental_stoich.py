@@ -29,7 +29,7 @@ def plot_elemental_stoichiometry(
     nc_percent = 100.0 * nc_ratio
     pc_percent = 100.0 * pc_ratio
 
-    fig, ax = plt.subplots(1, 1, figsize=(6.5, 5), constrained_layout=True)
+    fig, ax = plt.subplots(1, 1, figsize=(3.05, 2.35), constrained_layout=True)
 
     hb = ax.hexbin(
         nc_percent,
@@ -79,7 +79,7 @@ def plot_elemental_stoichiometry(
 
     cbar = fig.colorbar(hb, ax=ax, shrink=0.95)
     cbar.set_label("Protein mass fraction")
-    fig.savefig(outpath, dpi=220)
+    fig.savefig(outpath, dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 
