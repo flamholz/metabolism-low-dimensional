@@ -79,7 +79,6 @@ rule plot_elemental_stoich:
             "metabolism_low_dim/__init__.py",
             "metabolism_low_dim/constants.py",
             "metabolism_low_dim/data_io.py",
-            "metabolism_low_dim/plotting.py",
             "metabolism_low_dim/plot_utils.py",
             "metabolism_low_dim/plotting.mplstyle",
         ],
