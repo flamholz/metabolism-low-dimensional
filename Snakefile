@@ -61,14 +61,15 @@ rule sample_elemental_stoich:
         mass_fraction_ranges="data/mass_fraction_ranges.json",
         element_ranges="data/element_ranges.json",
         aa_residue_element_counts="data/aa_residue_element_counts.json",
-        aa_observed_mean="data/aa_observed_mean.csv",
+        aa_observed_mean="data/moura2013_aa_frequencies.json",
+        aa_frequencies_by_genome="data/moura2013_aa_frequencies_by_genome.csv",
         na_residue_element_counts="data/na_residue_element_counts.json",
         na_gc_content="data/na_gc_content.csv",
         na_pool_mix_mean="data/na_pool_mix_mean.csv",
     output:
         CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
     shell:
-        "python {input.script} --samples-csv " + CONSTRAINED_ELEMENTAL_STOICH_SAMPLES
+        "python {input.script} --n-samples 1000000 --samples-csv " + CONSTRAINED_ELEMENTAL_STOICH_SAMPLES
 
 
 rule plot_elemental_stoich:

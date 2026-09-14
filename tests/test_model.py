@@ -12,6 +12,7 @@ from metabolism_low_dim.model import (
     sample_mass_fractions_from_ranges,
     sample_nucleic_acid_from_gc,
     sample_protein_cno_from_aa,
+    sample_protein_cno_from_empirical_aa,
     to_molar_ratio,
 )
 
@@ -143,6 +144,74 @@ class TestModel(unittest.TestCase):
         self.assertTrue(np.allclose(c_frac, expected_c, atol=1e-12))
         self.assertTrue(np.allclose(n_frac, expected_n, atol=1e-12))
         self.assertTrue(np.allclose(o_frac, expected_o, atol=1e-12))
+
+    def test_sample_protein_cno_from_empirical_aa_bootstraps_real_rows(self) -> None:
+        rng = np.random.default_rng(7)
+        aa_codes = ("X", "Y")
+        residue_element_counts = {
+            "X": {"C": 5, "H": 8, "N": 1, "O": 2, "S": 0},
+            "Y": {"C": 3, "H": 4, "N": 2, "O": 1, "S": 0},
+        }
+
+        # Two synthetic "genomes" with distinct, extreme compositions.
+        empirical_aa_codes = ("X", "Y")
+        empirical_frequencies = np.array([[1.0, 0.0], [0.0, 1.0]])
+
+        def residue_mass(counts: dict[str, int]) -> float:
+            return (
+                counts["C"] * ATOMIC_MASS["C"]
+                + counts["H"] * ATOMIC_MASS["H"]
+                + counts["N"] * ATOMIC_MASS["N"]
+                + counts["O"] * ATOMIC_MASS["O"]
+            )
+
+        mass_x = residue_mass(residue_element_counts["X"])
+        mass_y = residue_mass(residue_element_counts["Y"])
+        c_x = 5 * ATOMIC_MASS["C"] / mass_x
+        c_y = 3 * ATOMIC_MASS["C"] / mass_y
+
+        c_frac, n_frac, o_frac = sample_protein_cno_from_empirical_aa(
+            rng=rng,
+            n_samples=200,
+            aa_codes=aa_codes,
+            residue_element_counts=residue_element_counts,
+            empirical_aa_codes=empirical_aa_codes,
+            empirical_frequencies=empirical_frequencies,
+        )
+
+        # Every sample must exactly match one of the two input genomes' C
+        # fraction -- proof this is a bootstrap over real rows, not
+        # synthetic interpolation between them.
+        is_genome_x = np.isclose(c_frac, c_x, atol=1e-12)
+        is_genome_y = np.isclose(c_frac, c_y, atol=1e-12)
+        self.assertTrue(np.all(is_genome_x | is_genome_y))
+        # With 200 draws from 2 genomes, both should appear.
+        self.assertTrue(np.any(is_genome_x))
+        self.assertTrue(np.any(is_genome_y))
+
+    def test_sample_protein_cno_from_empirical_aa_reorders_columns(self) -> None:
+        rng = np.random.default_rng(7)
+        aa_codes = ("X", "Y")
+        residue_element_counts = {
+            "X": {"C": 5, "H": 8, "N": 1, "O": 2, "S": 0},
+            "Y": {"C": 3, "H": 4, "N": 2, "O": 1, "S": 0},
+        }
+        # Columns in the opposite order from aa_codes.
+        empirical_aa_codes = ("Y", "X")
+        empirical_frequencies = np.array([[0.0, 1.0]])  # Y=0.0, X=1.0 -> all-X genome
+
+        c_frac, _, _ = sample_protein_cno_from_empirical_aa(
+            rng=rng,
+            n_samples=5,
+            aa_codes=aa_codes,
+            residue_element_counts=residue_element_counts,
+            empirical_aa_codes=empirical_aa_codes,
+            empirical_frequencies=empirical_frequencies,
+        )
+
+        mass_x = sum(residue_element_counts["X"][e] * ATOMIC_MASS[e] for e in ("C", "H", "N", "O"))
+        expected_c = 5 * ATOMIC_MASS["C"] / mass_x
+        self.assertTrue(np.allclose(c_frac, expected_c, atol=1e-12))
 
     def test_sample_ranged_elements_with_closure_enforces_mass_balance(self) -> None:
         rng = np.random.default_rng(7)

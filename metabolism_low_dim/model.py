@@ -87,19 +87,14 @@ def _sample_ranged_elements_with_closure(
     return {element: np.concatenate(collected[element])[:n_samples] for element in elements}
 
 
-def sample_protein_cno_from_aa(
-    rng: np.random.Generator,
-    n_samples: int,
-    concentration: float,
+def _protein_cno_from_frequencies(
+    aa_frequencies: np.ndarray,
     aa_codes: tuple[str, ...],
     residue_element_counts: dict[str, dict[str, int]],
-    observed_aa_mean: dict[str, float],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    mean = np.array([observed_aa_mean[aa] for aa in aa_codes], dtype=float)
-    mean /= mean.sum()
-    alpha = mean * concentration
-    aa_frequencies = rng.dirichlet(alpha, size=n_samples)
-
+    """Compute protein C/N/O mass fractions from an (n_samples, len(aa_codes))
+    matrix of per-sample amino-acid frequencies (columns in ``aa_codes`` order).
+    """
     c_counts = np.array([residue_element_counts[aa]["C"] for aa in aa_codes], dtype=float)
     n_counts = np.array([residue_element_counts[aa]["N"] for aa in aa_codes], dtype=float)
     o_counts = np.array([residue_element_counts[aa]["O"] for aa in aa_codes], dtype=float)
@@ -116,6 +111,74 @@ def sample_protein_cno_from_aa(
     n_mass_fraction = (aa_frequencies @ n_counts) * ATOMIC_MASS["N"] / mean_residue_mass
     o_mass_fraction = (aa_frequencies @ o_counts) * ATOMIC_MASS["O"] / mean_residue_mass
     return c_mass_fraction, n_mass_fraction, o_mass_fraction
+
+
+def sample_protein_cno_from_aa(
+    rng: np.random.Generator,
+    n_samples: int,
+    concentration: float,
+    aa_codes: tuple[str, ...],
+    residue_element_counts: dict[str, dict[str, int]],
+    observed_aa_mean: dict[str, float],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Sample protein C/N/O mass fractions from a synthetic Dirichlet
+    distribution of amino-acid frequencies, centered on ``observed_aa_mean``
+    with concentration ``concentration`` (higher = tighter around the mean).
+
+    This applies independent per-amino-acid noise around a single mean, so it
+    cannot reproduce real inter-genome covariance in amino-acid usage (e.g.
+    genomic GC content driving several amino acids' frequencies together).
+    See ``sample_protein_cno_from_empirical_aa`` for an alternative that
+    resamples whole real genome compositions instead.
+    """
+    mean = np.array([observed_aa_mean[aa] for aa in aa_codes], dtype=float)
+    mean /= mean.sum()
+    alpha = mean * concentration
+    aa_frequencies = rng.dirichlet(alpha, size=n_samples)
+    return _protein_cno_from_frequencies(aa_frequencies, aa_codes, residue_element_counts)
+
+
+def sample_protein_cno_from_empirical_aa(
+    rng: np.random.Generator,
+    n_samples: int,
+    aa_codes: tuple[str, ...],
+    residue_element_counts: dict[str, dict[str, int]],
+    empirical_aa_codes: tuple[str, ...],
+    empirical_frequencies: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Sample protein C/N/O mass fractions by resampling whole amino-acid
+    frequency vectors from real sequenced genomes (with replacement), rather
+    than drawing synthetic per-element noise around a single mean.
+
+    Each Monte Carlo sample gets one genome's actual, internally-consistent
+    amino-acid composition (see data/moura2013_aa_frequencies_by_genome.csv),
+    so this preserves whatever real covariance exists between amino acids
+    within a genome -- unlike ``sample_protein_cno_from_aa``, which perturbs
+    each amino acid independently. Genomes are resampled with equal
+    probability regardless of domain, matching the corpus's real composition
+    (predominantly Bacteria).
+
+    Parameters
+    ----------
+    empirical_aa_codes : tuple of str
+        Column order of ``empirical_frequencies``; reordered internally to
+        match ``aa_codes`` if the two differ (as long as the code sets match).
+    empirical_frequencies : np.ndarray
+        Shape ``(n_genomes, len(empirical_aa_codes))``.
+    """
+    if set(empirical_aa_codes) != set(aa_codes):
+        raise ValueError(
+            "empirical_aa_codes and aa_codes must contain the same amino acids: "
+            f"{set(empirical_aa_codes)} != {set(aa_codes)}"
+        )
+    column_for = {aa: i for i, aa in enumerate(empirical_aa_codes)}
+    reorder = [column_for[aa] for aa in aa_codes]
+    empirical_frequencies = empirical_frequencies[:, reorder]
+
+    n_genomes = empirical_frequencies.shape[0]
+    genome_idx = rng.integers(0, n_genomes, size=n_samples)
+    aa_frequencies = empirical_frequencies[genome_idx]
+    return _protein_cno_from_frequencies(aa_frequencies, aa_codes, residue_element_counts)
 
 
 def sample_nucleic_acid_from_gc(
@@ -191,6 +254,8 @@ def sample_element_fractions(
     na_residue_element_counts: dict[str, dict[str, dict[str, int]]],
     na_gc_mean: float,
     na_pool_mix_mean: dict[str, float],
+    empirical_aa_codes: tuple[str, ...] | None = None,
+    empirical_aa_frequencies: np.ndarray | None = None,
 ) -> dict[str, dict[str, np.ndarray]]:
     sampled: dict[str, dict[str, np.ndarray]] = {}
 
@@ -206,6 +271,15 @@ def sample_element_fractions(
             residue_element_counts=residue_element_counts,
             observed_aa_mean=observed_aa_mean,
         )
+    elif protein_aa_mode == "empirical":
+        protein_c, protein_n, protein_o = sample_protein_cno_from_empirical_aa(
+            rng=rng,
+            n_samples=n_samples,
+            aa_codes=aa_codes,
+            residue_element_counts=residue_element_counts,
+            empirical_aa_codes=empirical_aa_codes,
+            empirical_frequencies=empirical_aa_frequencies,
+        )
 
     na_sampled: dict[str, np.ndarray] | None = None
     if nucleic_acid_nt_mode == "observed":
@@ -220,7 +294,7 @@ def sample_element_fractions(
         )
 
     for macro in MACROMOLECULES:
-        if macro == "protein" and protein_aa_mode == "observed":
+        if macro == "protein" and protein_aa_mode in ("observed", "empirical"):
             low, high = element_ranges[macro]["P"]
             sampled[macro] = {
                 "C": protein_c,

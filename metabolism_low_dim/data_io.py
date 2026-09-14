@@ -73,20 +73,56 @@ def load_residue_element_counts(json_path: Path) -> tuple[tuple[str, ...], dict[
     return aa_codes, residue_element_counts
 
 
-def load_observed_aa_mean(csv_path: Path, aa_codes: tuple[str, ...]) -> dict[str, float]:
-    observed_aa_mean: dict[str, float] = {}
-    with csv_path.open(newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            aa = row["aa"].strip()
-            observed_aa_mean[aa] = float(row["mean"])
+def load_observed_aa_mean(json_path: Path, aa_codes: tuple[str, ...]) -> dict[str, float]:
+    """Load mean amino-acid usage frequencies (see data/moura2013_aa_frequencies.json)."""
+    with json_path.open(encoding="utf-8") as f:
+        data = json.load(f)
+
+    observed_aa_mean = {aa: float(stats["mean"]) for aa, stats in data["amino_acids"].items()}
 
     missing = [aa for aa in aa_codes if aa not in observed_aa_mean]
     if missing:
-        raise ValueError(f"Missing amino-acid means in {csv_path}: {missing}")
+        raise ValueError(f"Missing amino-acid means in {json_path}: {missing}")
     return observed_aa_mean
 
 
+def load_aa_frequencies_by_genome(csv_path: Path) -> tuple[tuple[str, ...], np.ndarray]:
+    """Load per-genome amino-acid frequencies (see data/moura2013_aa_frequencies_by_genome.csv).
+
+    Returns
+    -------
+    aa_codes : tuple of str
+        Amino-acid codes, in the CSV's column order.
+    frequencies : np.ndarray
+        Shape ``(n_genomes, len(aa_codes))``; row i is genome i's frequency
+        vector, in ``aa_codes`` order.
+    """
+    with csv_path.open(newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+
+    if not rows:
+        raise ValueError(f"No genome records found in {csv_path}")
+
+    aa_codes = tuple(k for k in rows[0].keys() if k not in ("organism", "domain"))
+    frequencies = np.array([[float(row[code]) for code in aa_codes] for row in rows], dtype=float)
+    return aa_codes, frequencies
+
+
 def load_empirical_ratios(csv_path: Path) -> tuple[np.ndarray, np.ndarray]:
+    """Load empirical N:C and P:C molar ratios for a phase-diagram overlay.
+
+    Accepts any one of three column schemas (checked in this order):
+    (N_to_C, P_to_C) directly; (C_to_P, N_to_P), from which N:C and P:C
+    are derived; or (cp_mean, np_mean), same derivation, named for the
+    Martiny et al. (2013) source table.
+
+    Returns
+    -------
+    nc_ratio : np.ndarray
+        N:C molar ratio per row.
+    pc_ratio : np.ndarray
+        P:C molar ratio per row.
+    """
     nc_values: list[float] = []
     pc_values: list[float] = []
     with csv_path.open(newline="", encoding="utf-8") as f:

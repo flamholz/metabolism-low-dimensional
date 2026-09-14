@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 
 from metabolism_low_dim.data_io import (
+    load_aa_frequencies_by_genome,
     load_element_ranges,
     load_mass_fraction_ranges,
     load_na_gc_content,
@@ -63,12 +64,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--protein-aa-mode",
-        choices=("observed", "range"),
-        default="observed",
+        choices=("empirical", "observed", "range"),
+        default="empirical",
         help=(
-            "How to sample protein composition: 'observed' samples amino-acid frequencies "
-            "from an empirical prior then computes protein C/N; 'range' uses the original "
-            "independent protein C/N ranges (default: observed)."
+            "How to sample protein composition: 'empirical' resamples whole amino-acid "
+            "frequency vectors from real sequenced genomes (data/"
+            "moura2013_aa_frequencies_by_genome.csv), preserving real inter-amino-acid "
+            "covariance; 'observed' draws synthetic per-amino-acid noise from a Dirichlet "
+            "distribution centered on the empirical mean; 'range' uses the original "
+            "independent protein C/N/O ranges (default: empirical)."
         ),
     )
     parser.add_argument(
@@ -120,7 +124,10 @@ def run(args: argparse.Namespace) -> Path:
     aa_codes, residue_element_counts = load_residue_element_counts(
         args.data_dir / "aa_residue_element_counts.json"
     )
-    observed_aa_mean = load_observed_aa_mean(args.data_dir / "aa_observed_mean.csv", aa_codes)
+    observed_aa_mean = load_observed_aa_mean(args.data_dir / "moura2013_aa_frequencies.json", aa_codes)
+    empirical_aa_codes, empirical_aa_frequencies = load_aa_frequencies_by_genome(
+        args.data_dir / "moura2013_aa_frequencies_by_genome.csv"
+    )
     na_residue_element_counts = load_na_residue_element_counts(
         args.data_dir / "na_residue_element_counts.json"
     )
@@ -153,6 +160,8 @@ def run(args: argparse.Namespace) -> Path:
         na_residue_element_counts=na_residue_element_counts,
         na_gc_mean=na_gc_mean,
         na_pool_mix_mean=na_pool_mix_mean,
+        empirical_aa_codes=empirical_aa_codes,
+        empirical_aa_frequencies=empirical_aa_frequencies,
     )
     totals = compute_elemental_totals(mass_fractions=mass_fractions, element_fractions=element_fractions)
 

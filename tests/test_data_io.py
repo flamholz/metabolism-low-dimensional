@@ -9,10 +9,12 @@ import numpy as np
 
 from metabolism_low_dim.constants import MACROMOLECULES
 from metabolism_low_dim.data_io import (
+    load_aa_frequencies_by_genome,
     load_element_ranges,
     load_empirical_ratios,
     load_mass_fraction_ranges,
     load_na_residue_element_counts,
+    load_observed_aa_mean,
     load_residue_element_counts,
 )
 
@@ -177,6 +179,62 @@ class TestDataIO(unittest.TestCase):
         # RNA "A" residue (dehydrated AMP): C10H12N5O6P.
         self.assertEqual(counts["RNA"]["A"], {"C": 10, "H": 12, "N": 5, "O": 6, "P": 1})
         self.assertEqual(set(counts.keys()), {"RNA", "DNA"})
+
+    def test_load_observed_aa_mean(self) -> None:
+        data = {
+            "amino_acids": {
+                "A": {"mean": 0.09, "std": 0.03, "min": 0.01, "max": 0.16},
+                "G": {"mean": 0.07, "std": 0.01, "min": 0.03, "max": 0.11},
+            }
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            json_path = Path(tmpdir) / "aa_frequencies.json"
+            json_path.write_text(json.dumps(data), encoding="utf-8")
+            observed_aa_mean = load_observed_aa_mean(json_path, aa_codes=("A", "G"))
+
+        self.assertEqual(observed_aa_mean, {"A": 0.09, "G": 0.07})
+
+    def test_load_observed_aa_mean_rejects_missing_aa(self) -> None:
+        data = {"amino_acids": {"A": {"mean": 0.09, "std": 0.03, "min": 0.01, "max": 0.16}}}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            json_path = Path(tmpdir) / "aa_frequencies.json"
+            json_path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_observed_aa_mean(json_path, aa_codes=("A", "G"))
+
+    def test_load_observed_aa_mean_from_repo_data_sums_to_one(self) -> None:
+        aa_codes, _ = load_residue_element_counts(Path("data/aa_residue_element_counts.json"))
+        observed_aa_mean = load_observed_aa_mean(
+            Path("data/moura2013_aa_frequencies.json"), aa_codes
+        )
+
+        self.assertEqual(set(observed_aa_mean.keys()), set(aa_codes))
+        self.assertAlmostEqual(sum(observed_aa_mean.values()), 1.0, places=9)
+
+    def test_load_aa_frequencies_by_genome(self) -> None:
+        csv_text = (
+            "organism,domain,A,G\n"
+            "org1,BACTERIA,0.6,0.4\n"
+            "org2,ARCHAEA,0.3,0.7\n"
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "aa_frequencies_by_genome.csv"
+            csv_path.write_text(csv_text, encoding="utf-8")
+            aa_codes, frequencies = load_aa_frequencies_by_genome(csv_path)
+
+        self.assertEqual(aa_codes, ("A", "G"))
+        self.assertEqual(frequencies.shape, (2, 2))
+        self.assertTrue(np.allclose(frequencies, [[0.6, 0.4], [0.3, 0.7]]))
+
+    def test_load_aa_frequencies_by_genome_from_repo_data(self) -> None:
+        aa_codes, frequencies = load_aa_frequencies_by_genome(
+            Path("data/moura2013_aa_frequencies_by_genome.csv")
+        )
+
+        self.assertEqual(len(aa_codes), 20)
+        self.assertEqual(frequencies.shape, (1086, 20))
+        row_sums = frequencies.sum(axis=1)
+        self.assertTrue(np.allclose(row_sums, 1.0, atol=1e-6))
 
 
 if __name__ == "__main__":
