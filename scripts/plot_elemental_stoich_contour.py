@@ -64,7 +64,6 @@ def plot_elemental_stoichiometry_contour(
     # a low threshold (a small fraction of peak density).
     #ax.contour(x_centers, y_centers, density, levels=[density.max() * 1e-3], colors="black", linewidths=1.2)
 
-    ax.set_title("P:C vs N:C (sample density)")
     ax.set_xlabel("N:C (molar %)")
     ax.set_ylabel("P:C (molar %)")
 

@@ -40,7 +40,6 @@ def plot_elemental_stoichiometry(
         mincnt=1,
         cmap="magma",
     )
-    ax.set_title("P:C vs N:C")
     ax.set_xlabel("N:C (molar %)")
     ax.set_ylabel("P:C (molar %)")
 
