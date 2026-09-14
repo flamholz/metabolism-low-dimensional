@@ -6,6 +6,7 @@ location, not the caller's cwd, so no `workdir:` directive is needed).
 """
 
 CONSTRAINED_ELEMENTAL_STOICH_PLOT = "figures/constrained_elemental_stoich.png"
+CONSTRAINED_ELEMENTAL_STOICH_CONTOUR_PLOT = "figures/constrained_elemental_stoich_contour.png"
 CONSTRAINED_ELEMENTAL_STOICH_SAMPLES = "output/elemental_stoich_samples.csv"
 
 rule all:
@@ -13,6 +14,7 @@ rule all:
         "figures/elemental_FBA_panels.png",
         "figures/elemental_FBA_panels.svg",
         CONSTRAINED_ELEMENTAL_STOICH_PLOT,
+        CONSTRAINED_ELEMENTAL_STOICH_CONTOUR_PLOT,
         CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
 
 
@@ -92,5 +94,29 @@ rule plot_elemental_stoich:
         "python {input.script} "
         "--samples-csv {input.samples_csv} "
         "--plot-path " + CONSTRAINED_ELEMENTAL_STOICH_PLOT + " "
+        "--empirical-csv {input.vrede_empirical} --empirical-label 'Vrede 2002' "
+        "--empirical-csv {input.makino_empirical} --empirical-label 'Makino 2003'"
+
+
+rule plot_elemental_stoich_contour:
+    input:
+        script="scripts/plot_elemental_stoich_contour.py",
+        package=[
+            "metabolism_low_dim/__init__.py",
+            "metabolism_low_dim/constants.py",
+            "metabolism_low_dim/data_io.py",
+            "metabolism_low_dim/plot_utils.py",
+            "metabolism_low_dim/plotting.mplstyle",
+        ],
+        samples_csv=CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
+        martiny="data/martiny_table_s2_latitude_metadata.csv",
+        vrede_empirical="data/vrede2002_empirical.csv",
+        makino_empirical="data/makino2003_empirical.csv",
+    output:
+        CONSTRAINED_ELEMENTAL_STOICH_CONTOUR_PLOT,
+    shell:
+        "python {input.script} "
+        "--samples-csv {input.samples_csv} "
+        "--plot-path " + CONSTRAINED_ELEMENTAL_STOICH_CONTOUR_PLOT + " "
         "--empirical-csv {input.vrede_empirical} --empirical-label 'Vrede 2002' "
         "--empirical-csv {input.makino_empirical} --empirical-label 'Makino 2003'"
