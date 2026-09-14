@@ -22,6 +22,9 @@ import numpy as np
 
 from .constants import ATOMIC_MASS, MACROMOLECULES, NA_ELEMENTS, NA_POOLS, RESIDUE_ELEMENTS
 
+PROTEIN_AA_MODES = ("observed", "empirical", "range")
+NUCLEIC_ACID_NT_MODES = ("observed", "range")
+
 
 def sample_mass_fractions_from_ranges(
     rng: np.random.Generator,
@@ -190,6 +193,34 @@ def sample_nucleic_acid_from_gc(
     na_residue_element_counts: dict[str, dict[str, dict[str, int]]],
     na_pool_mix_mean: dict[str, float],
 ) -> dict[str, np.ndarray]:
+    """Sample nucleic-acid C/N/O/P mass fractions from GC content and RNA:DNA mix.
+
+    For each of the RNA and DNA pools, nucleotide frequencies are derived
+    from a per-sample GC content (assuming G/C and A/U(T) each split their
+    share of frequency evenly, i.e. a Chargaff's-second-rule-style
+    symmetry within each pool -- a standard approximation, not an exact
+    biological constraint). RNA and DNA pools are then mixed per sample
+    via a Dirichlet draw centered on ``na_pool_mix_mean``.
+
+    Parameters
+    ----------
+    gc_mean, gc_concentration : float
+        Beta-distribution mean and concentration for per-sample GC
+        content (shared by both RNA and DNA pools within a given sample).
+    pool_concentration : float
+        Dirichlet concentration for the RNA:DNA mass-fraction mix,
+        centered on ``na_pool_mix_mean`` (higher = tighter around the mean).
+    na_residue_element_counts : dict
+        Dehydrated (polymer) element counts per pool and nucleotide code,
+        as returned by ``data_io.load_na_residue_element_counts``.
+    na_pool_mix_mean : dict
+        Mean mass-fraction split between the "RNA" and "DNA" pools.
+
+    Returns
+    -------
+    dict of str to np.ndarray
+        Per-sample mass fraction for each of "C", "N", "O", "P".
+    """
     gc_alpha = gc_mean * gc_concentration
     gc_beta = (1.0 - gc_mean) * gc_concentration
     gc_content = rng.beta(gc_alpha, gc_beta, size=n_samples)
@@ -257,6 +288,45 @@ def sample_element_fractions(
     empirical_aa_codes: tuple[str, ...] | None = None,
     empirical_aa_frequencies: np.ndarray | None = None,
 ) -> dict[str, dict[str, np.ndarray]]:
+    """Sample per-macromolecule C/N/O/P mass fractions for every pool in MACROMOLECULES.
+
+    Dispatches each macromolecule to whichever sampling method its mode
+    selects:
+
+    - protein: ``sample_protein_cno_from_aa`` (Dirichlet noise around
+      ``observed_aa_mean``) if ``protein_aa_mode == "observed"``,
+      ``sample_protein_cno_from_empirical_aa`` (bootstrap real genomes,
+      via ``empirical_aa_codes``/``empirical_aa_frequencies``) if
+      ``"empirical"``; ``"range"`` falls through to the same
+      independent-range sampling as every other macromolecule. P is
+      always drawn independently from ``element_ranges["protein"]["P"]``
+      regardless of mode, since amino-acid composition doesn't determine it.
+    - nucleic_acid: ``sample_nucleic_acid_from_gc`` if
+      ``nucleic_acid_nt_mode == "observed"``; ``"range"`` falls through to
+      independent-range sampling.
+    - every other macromolecule: always independent-range sampling, via
+      ``_sample_ranged_elements_with_closure``.
+
+    Raises
+    ------
+    ValueError
+        If ``protein_aa_mode`` is not one of ``PROTEIN_AA_MODES`` or
+        ``nucleic_acid_nt_mode`` is not one of ``NUCLEIC_ACID_NT_MODES``.
+
+    Returns
+    -------
+    dict of str to dict of str to np.ndarray
+        ``result[macro][element]`` is the per-sample mass fraction of
+        ``element`` ("C"/"N"/"O"/"P") within macromolecule ``macro``, for
+        every ``macro`` in ``MACROMOLECULES``.
+    """
+    if protein_aa_mode not in PROTEIN_AA_MODES:
+        raise ValueError(f"protein_aa_mode must be one of {PROTEIN_AA_MODES}, got {protein_aa_mode!r}")
+    if nucleic_acid_nt_mode not in NUCLEIC_ACID_NT_MODES:
+        raise ValueError(
+            f"nucleic_acid_nt_mode must be one of {NUCLEIC_ACID_NT_MODES}, got {nucleic_acid_nt_mode!r}"
+        )
+
     sampled: dict[str, dict[str, np.ndarray]] = {}
 
     protein_c: np.ndarray | None = None
@@ -317,6 +387,29 @@ def compute_elemental_totals(
     mass_fractions: np.ndarray,
     element_fractions: dict[str, dict[str, np.ndarray]],
 ) -> dict[str, np.ndarray]:
+    """Aggregate per-macromolecule element mass fractions into whole-cell totals.
+
+    For each element, sums ``mass_fractions[:, i] *
+    element_fractions[macro][element]`` over all macromolecules (in
+    ``MACROMOLECULES`` order), giving each sample's whole-cell mass
+    fraction of that element.
+
+    Parameters
+    ----------
+    mass_fractions : np.ndarray
+        Shape ``(n_samples, len(MACROMOLECULES))``, columns in
+        ``MACROMOLECULES`` order (e.g. as returned by
+        ``sample_mass_fractions_from_ranges``).
+    element_fractions : dict
+        ``element_fractions[macro][element]`` is that macromolecule's
+        per-sample mass fraction of the element, as returned by
+        ``sample_element_fractions``.
+
+    Returns
+    -------
+    dict of str to np.ndarray
+        Whole-cell mass fraction per sample, for "C", "N", "O", "P".
+    """
     totals = {
         "C": np.zeros(mass_fractions.shape[0]),
         "N": np.zeros(mass_fractions.shape[0]),
@@ -335,6 +428,12 @@ def to_molar_ratio(
     numerator_element: str,
     denominator_element: str,
 ) -> np.ndarray:
+    """Convert a mass-fraction ratio to a molar (mole:mole) ratio.
+
+    Divides each mass fraction by its element's atomic mass before taking
+    the ratio: ``(numerator_mass_fraction / ATOMIC_MASS[numerator_element])
+    / (denominator_mass_fraction / ATOMIC_MASS[denominator_element])``.
+    """
     numerator_moles = numerator_mass_fraction / ATOMIC_MASS[numerator_element]
     denominator_moles = denominator_mass_fraction / ATOMIC_MASS[denominator_element]
     return numerator_moles / denominator_moles

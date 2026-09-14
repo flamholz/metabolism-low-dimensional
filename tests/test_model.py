@@ -9,6 +9,7 @@ from metabolism_low_dim.constants import MACROMOLECULES
 from metabolism_low_dim.model import (
     _sample_ranged_elements_with_closure,
     compute_elemental_totals,
+    sample_element_fractions,
     sample_mass_fractions_from_ranges,
     sample_nucleic_acid_from_gc,
     sample_protein_cno_from_aa,
@@ -331,6 +332,145 @@ class TestModel(unittest.TestCase):
         expected_dna_heavy_o = 0.05 * rna_o_frac + 0.95 * dna_o_frac
         self.assertAlmostEqual(float(np.mean(rna_heavy["O"])), expected_rna_heavy_o, places=3)
         self.assertAlmostEqual(float(np.mean(dna_heavy["O"])), expected_dna_heavy_o, places=3)
+
+
+class TestSampleElementFractions(unittest.TestCase):
+    """Covers metabolism_low_dim.model.sample_element_fractions, the
+    per-macromolecule dispatch function -- previously untested directly.
+    """
+
+    AA_CODES = ("X",)
+    RESIDUE_ELEMENT_COUNTS = {"X": {"C": 5, "H": 8, "N": 1, "O": 2, "S": 0}}
+    OBSERVED_AA_MEAN = {"X": 1.0}
+
+    NA_RESIDUE_ELEMENT_COUNTS = {
+        "RNA": {
+            nt: {"C": 10, "H": 12, "N": 2, "O": 7, "P": 1} for nt in ("A", "U", "G", "C")
+        },
+        "DNA": {
+            nt: {"C": 10, "H": 12, "N": 2, "O": 7, "P": 1} for nt in ("A", "T", "G", "C")
+        },
+    }
+    NA_POOL_MIX_MEAN = {"RNA": 0.9, "DNA": 0.1}
+    NA_GC_MEAN = 0.5
+
+    # Deliberately tight, closure-safe ranges (well under a C+N+O+P sum of
+    # 1.0) so closure-rejection sampling has a ~100% acceptance rate and
+    # tests are not flaky.
+    ELEMENT_RANGES = {
+        "protein": {"C": (0.50, 0.50), "N": (0.14, 0.14), "O": (0.20, 0.20), "P": (0.000, 0.010)},
+        "sugar": {"C": (0.38, 0.40), "N": (0.000, 0.010), "O": (0.46, 0.48), "P": (0.000, 0.010)},
+        "nucleic_acid": {"C": (0.31, 0.33), "N": (0.14, 0.15), "O": (0.30, 0.32), "P": (0.080, 0.090)},
+        "membrane_lipid": {"C": (0.60, 0.62), "N": (0.000, 0.010), "O": (0.10, 0.12), "P": (0.010, 0.020)},
+        "storage_lipid": {"C": (0.72, 0.74), "N": (0.000, 0.005), "O": (0.04, 0.06), "P": (0.000, 0.001)},
+        "metabolite": {"C": (0.20, 0.22), "N": (0.02, 0.03), "O": (0.22, 0.24), "P": (0.000, 0.020)},
+    }
+
+    def _kwargs(self, **overrides) -> dict:
+        kwargs = dict(
+            rng=np.random.default_rng(7),
+            n_samples=200,
+            protein_aa_mode="observed",
+            protein_aa_concentration=250.0,
+            nucleic_acid_nt_mode="observed",
+            nucleic_acid_gc_concentration=50.0,
+            nucleic_acid_pool_concentration=300.0,
+            element_ranges=self.ELEMENT_RANGES,
+            aa_codes=self.AA_CODES,
+            residue_element_counts=self.RESIDUE_ELEMENT_COUNTS,
+            observed_aa_mean=self.OBSERVED_AA_MEAN,
+            na_residue_element_counts=self.NA_RESIDUE_ELEMENT_COUNTS,
+            na_gc_mean=self.NA_GC_MEAN,
+            na_pool_mix_mean=self.NA_POOL_MIX_MEAN,
+            empirical_aa_codes=("X",),
+            empirical_aa_frequencies=np.array([[1.0]]),
+        )
+        kwargs.update(overrides)
+        return kwargs
+
+    def _expected_protein_cno(self) -> tuple[float, float, float]:
+        residue = self.RESIDUE_ELEMENT_COUNTS["X"]
+        residue_mass = (
+            residue["C"] * ATOMIC_MASS["C"]
+            + residue["H"] * ATOMIC_MASS["H"]
+            + residue["N"] * ATOMIC_MASS["N"]
+            + residue["O"] * ATOMIC_MASS["O"]
+        )
+        return (
+            residue["C"] * ATOMIC_MASS["C"] / residue_mass,
+            residue["N"] * ATOMIC_MASS["N"] / residue_mass,
+            residue["O"] * ATOMIC_MASS["O"] / residue_mass,
+        )
+
+    def test_returns_all_macromolecules_with_all_elements(self) -> None:
+        sampled = sample_element_fractions(**self._kwargs())
+
+        self.assertEqual(set(sampled.keys()), set(MACROMOLECULES))
+        for macro in MACROMOLECULES:
+            self.assertEqual(set(sampled[macro].keys()), {"C", "N", "O", "P"})
+            for element in ("C", "N", "O", "P"):
+                self.assertEqual(sampled[macro][element].shape, (200,))
+
+    def test_protein_observed_mode_matches_aa_sampling(self) -> None:
+        sampled = sample_element_fractions(**self._kwargs(protein_aa_mode="observed"))
+        expected_c, expected_n, expected_o = self._expected_protein_cno()
+
+        # Single amino acid with mean 1.0 -> Dirichlet is degenerate, so
+        # the result is deterministic and must match exactly.
+        self.assertTrue(np.allclose(sampled["protein"]["C"], expected_c, atol=1e-12))
+        self.assertTrue(np.allclose(sampled["protein"]["N"], expected_n, atol=1e-12))
+        self.assertTrue(np.allclose(sampled["protein"]["O"], expected_o, atol=1e-12))
+        low, high = self.ELEMENT_RANGES["protein"]["P"]
+        self.assertTrue(np.all(sampled["protein"]["P"] >= low))
+        self.assertTrue(np.all(sampled["protein"]["P"] <= high))
+
+    def test_protein_empirical_mode_matches_genome_resampling(self) -> None:
+        sampled = sample_element_fractions(**self._kwargs(protein_aa_mode="empirical"))
+        expected_c, expected_n, expected_o = self._expected_protein_cno()
+
+        # Single-genome, single-amino-acid corpus -> also deterministic.
+        self.assertTrue(np.allclose(sampled["protein"]["C"], expected_c, atol=1e-12))
+        self.assertTrue(np.allclose(sampled["protein"]["N"], expected_n, atol=1e-12))
+        self.assertTrue(np.allclose(sampled["protein"]["O"], expected_o, atol=1e-12))
+
+    def test_protein_range_mode_uses_closure_checked_ranges(self) -> None:
+        sampled = sample_element_fractions(**self._kwargs(protein_aa_mode="range"))
+
+        for element in ("C", "N", "O", "P"):
+            low, high = self.ELEMENT_RANGES["protein"][element]
+            self.assertTrue(np.all(sampled["protein"][element] >= low))
+            self.assertTrue(np.all(sampled["protein"][element] <= high))
+        total = sum(sampled["protein"][element] for element in ("C", "N", "O", "P"))
+        self.assertTrue(np.all(total <= 1.0 + 1e-12))
+
+    def test_nucleic_acid_range_mode_uses_closure_checked_ranges(self) -> None:
+        sampled = sample_element_fractions(**self._kwargs(nucleic_acid_nt_mode="range"))
+
+        for element in ("C", "N", "O", "P"):
+            low, high = self.ELEMENT_RANGES["nucleic_acid"][element]
+            self.assertTrue(np.all(sampled["nucleic_acid"][element] >= low))
+            self.assertTrue(np.all(sampled["nucleic_acid"][element] <= high))
+        total = sum(sampled["nucleic_acid"][element] for element in ("C", "N", "O", "P"))
+        self.assertTrue(np.all(total <= 1.0 + 1e-12))
+
+    def test_other_macromolecules_always_use_closure_checked_ranges(self) -> None:
+        sampled = sample_element_fractions(**self._kwargs())
+
+        for macro in ("sugar", "membrane_lipid", "storage_lipid", "metabolite"):
+            for element in ("C", "N", "O", "P"):
+                low, high = self.ELEMENT_RANGES[macro][element]
+                self.assertTrue(np.all(sampled[macro][element] >= low))
+                self.assertTrue(np.all(sampled[macro][element] <= high))
+            total = sum(sampled[macro][element] for element in ("C", "N", "O", "P"))
+            self.assertTrue(np.all(total <= 1.0 + 1e-12))
+
+    def test_rejects_invalid_protein_aa_mode(self) -> None:
+        with self.assertRaises(ValueError):
+            sample_element_fractions(**self._kwargs(protein_aa_mode="bogus"))
+
+    def test_rejects_invalid_nucleic_acid_nt_mode(self) -> None:
+        with self.assertRaises(ValueError):
+            sample_element_fractions(**self._kwargs(nucleic_acid_nt_mode="bogus"))
 
 
 if __name__ == "__main__":
