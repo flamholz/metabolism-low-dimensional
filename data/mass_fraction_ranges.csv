@@ -1,6 +1,0 @@
-macromolecule,low,high
-protein,0.30,0.65
-nucleic_acid,0.03,0.30
-membrane_lipid,0.03,0.08
-storage_lipid,0.02,0.22
-metabolite,0.01,0.12

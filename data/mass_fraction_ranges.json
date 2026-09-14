@@ -1,0 +1,10 @@
+{
+  "description": "Independent mass-fraction ranges (low, high) for 5 of the 6 macromolecule pools. 'sugar' is not listed here because it is the derived residual (1 - sum of the other 5), computed and range-checked in metabolism_low_dim.model.sample_mass_fractions_from_ranges. These ranges (and sugar's implied residual) are intentionally left wide rather than tightly capped: the comparison dataset (Martiny et al. 2013) includes marine phytoplankton, which can store large amounts of both carbohydrate and lipid under nutrient stress, so a tight cap would risk excluding real biology rather than fixing a bug. Sources for these bounds are not yet cited in this file.",
+  "macromolecules": {
+    "protein": [0.30, 0.65],
+    "nucleic_acid": [0.03, 0.30],
+    "membrane_lipid": [0.03, 0.08],
+    "storage_lipid": [0.02, 0.22],
+    "metabolite": [0.01, 0.12]
+  }
+}

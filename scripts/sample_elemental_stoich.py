@@ -115,10 +115,10 @@ def parse_args() -> argparse.Namespace:
 def run(args: argparse.Namespace) -> Path:
     rng = np.random.default_rng(args.seed)
 
-    mass_fraction_ranges = load_mass_fraction_ranges(args.data_dir / "mass_fraction_ranges.csv")
-    element_ranges = load_element_ranges(args.data_dir / "element_ranges.csv")
+    mass_fraction_ranges = load_mass_fraction_ranges(args.data_dir / "mass_fraction_ranges.json")
+    element_ranges = load_element_ranges(args.data_dir / "element_ranges.json")
     aa_codes, residue_element_counts = load_residue_element_counts(
-        args.data_dir / "aa_residue_element_counts.csv"
+        args.data_dir / "aa_residue_element_counts.json"
     )
     observed_aa_mean = load_observed_aa_mean(args.data_dir / "aa_observed_mean.csv", aa_codes)
     na_residue_element_counts = load_na_residue_element_counts(

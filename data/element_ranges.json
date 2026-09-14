@@ -1,0 +1,12 @@
+{
+  "description": "Independent per-element mass-fraction ranges (low, high) for each macromolecule pool. Used by metabolism_low_dim.model.sample_element_fractions's 'range' fallback, and always for sugar/membrane_lipid/storage_lipid/metabolite (which have no alternative composition-derived sampler). Elements are sampled independently and uniformly within each range; model.py::_sample_ranged_elements_with_closure rejects and redraws any row whose C+N+O+P sum exceeds 1.0, since mass fractions of real constituents cannot exceed the whole. Sources for these bounds are not yet cited in this file.",
+  "elements": ["C", "N", "O", "P"],
+  "macromolecules": {
+    "protein": {"C": [0.50, 0.56], "N": [0.14, 0.19], "O": [0.20, 0.25], "P": [0.000, 0.010]},
+    "sugar": {"C": [0.38, 0.46], "N": [0.000, 0.030], "O": [0.46, 0.56], "P": [0.000, 0.020]},
+    "nucleic_acid": {"C": [0.31, 0.38], "N": [0.14, 0.18], "O": [0.30, 0.40], "P": [0.080, 0.105]},
+    "membrane_lipid": {"C": [0.60, 0.78], "N": [0.000, 0.020], "O": [0.10, 0.30], "P": [0.010, 0.050]},
+    "storage_lipid": {"C": [0.72, 0.84], "N": [0.000, 0.005], "O": [0.04, 0.16], "P": [0.000, 0.002]},
+    "metabolite": {"C": [0.20, 0.45], "N": [0.02, 0.10], "O": [0.22, 0.50], "P": [0.08, 0.30]}
+  }
+}

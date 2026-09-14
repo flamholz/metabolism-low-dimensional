@@ -11,59 +11,66 @@ import numpy as np
 from .constants import ELEMENTS_FOR_RANGES, INDEPENDENT_MACROMOLECULES, MACROMOLECULES, NA_ELEMENTS, NA_POOLS, RESIDUE_ELEMENTS
 
 
-def load_mass_fraction_ranges(csv_path: Path) -> dict[str, tuple[float, float]]:
+def load_mass_fraction_ranges(json_path: Path) -> dict[str, tuple[float, float]]:
+    with json_path.open(encoding="utf-8") as f:
+        data = json.load(f)
+
     ranges: dict[str, tuple[float, float]] = {}
-    with csv_path.open(newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            macro = row["macromolecule"].strip()
-            low = float(row["low"])
-            high = float(row["high"])
-            if low >= high:
-                raise ValueError(f"Invalid range for {macro} in {csv_path}: {low} >= {high}")
-            ranges[macro] = (low, high)
+    for macro, (low, high) in data["macromolecules"].items():
+        low, high = float(low), float(high)
+        if low >= high:
+            raise ValueError(f"Invalid range for {macro} in {json_path}: {low} >= {high}")
+        ranges[macro] = (low, high)
 
     missing = [m for m in INDEPENDENT_MACROMOLECULES if m not in ranges]
     if missing:
-        raise ValueError(f"Missing macromolecules in {csv_path}: {missing}")
+        raise ValueError(f"Missing macromolecules in {json_path}: {missing}")
     return ranges
 
 
-def load_element_ranges(csv_path: Path) -> dict[str, dict[str, tuple[float, float]]]:
-    element_ranges: dict[str, dict[str, tuple[float, float]]] = {m: {} for m in MACROMOLECULES}
-    with csv_path.open(newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            macro = row["macromolecule"].strip()
-            element = row["element"].strip()
-            if macro not in MACROMOLECULES:
-                raise ValueError(f"Unknown macromolecule in {csv_path}: {macro}")
-            if element not in ELEMENTS_FOR_RANGES:
-                raise ValueError(f"Unsupported element in {csv_path}: {element}")
+def load_element_ranges(json_path: Path) -> dict[str, dict[str, tuple[float, float]]]:
+    with json_path.open(encoding="utf-8") as f:
+        data = json.load(f)
 
-            low = float(row["low"])
-            high = float(row["high"])
+    element_ranges: dict[str, dict[str, tuple[float, float]]] = {m: {} for m in MACROMOLECULES}
+    for macro, element_bounds in data["macromolecules"].items():
+        if macro not in MACROMOLECULES:
+            raise ValueError(f"Unknown macromolecule in {json_path}: {macro}")
+        for element, (low, high) in element_bounds.items():
+            if element not in ELEMENTS_FOR_RANGES:
+                raise ValueError(f"Unsupported element in {json_path}: {element}")
+            low, high = float(low), float(high)
             if low > high:
-                raise ValueError(f"Invalid range in {csv_path} for {macro}/{element}: {low}>{high}")
+                raise ValueError(f"Invalid range in {json_path} for {macro}/{element}: {low}>{high}")
             element_ranges[macro][element] = (low, high)
 
     for macro in MACROMOLECULES:
         for element in ELEMENTS_FOR_RANGES:
             if element not in element_ranges[macro]:
-                raise ValueError(f"Missing range in {csv_path} for {macro}/{element}")
+                raise ValueError(f"Missing range in {json_path} for {macro}/{element}")
     return element_ranges
 
 
-def load_residue_element_counts(csv_path: Path) -> tuple[tuple[str, ...], dict[str, dict[str, int]]]:
-    aa_codes: list[str] = []
-    residue_element_counts: dict[str, dict[str, int]] = {}
-    with csv_path.open(newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            aa = row["aa"].strip()
-            aa_codes.append(aa)
-            residue_element_counts[aa] = {element: int(row[element]) for element in RESIDUE_ELEMENTS}
+def load_residue_element_counts(json_path: Path) -> tuple[tuple[str, ...], dict[str, dict[str, int]]]:
+    """Load dehydrated in-chain amino-acid residue element counts.
+
+    The source file also carries each amino acid's free (hydrated) counts
+    for reference, but the model samples polymerized protein, so this
+    returns the 'polymer' (dehydrated) counts.
+    """
+    with json_path.open(encoding="utf-8") as f:
+        data = json.load(f)
+
+    residues = data["residues"]
+    aa_codes = tuple(residues.keys())
+    residue_element_counts: dict[str, dict[str, int]] = {
+        aa: {element: int(forms["polymer"][element]) for element in RESIDUE_ELEMENTS}
+        for aa, forms in residues.items()
+    }
 
     if not aa_codes:
-        raise ValueError(f"No residues found in {csv_path}")
-    return tuple(aa_codes), residue_element_counts
+        raise ValueError(f"No residues found in {json_path}")
+    return aa_codes, residue_element_counts
 
 
 def load_observed_aa_mean(csv_path: Path, aa_codes: tuple[str, ...]) -> dict[str, float]:
