@@ -51,6 +51,17 @@ rule transform_makino2003:
         "python {input.script}"
 
 
+rule transform_tanioka:
+    input:
+        script="scripts/transform_tanioka.py",
+        table="data/tanioka2020_algalCNP_SItable.xlsx",
+    output:
+        "data/tanioka2020_empirical.csv",
+        "data/tanioka2020_empirical_by_pft.csv",
+    shell:
+        "python {input.script}"
+
+
 rule sample_elemental_stoich:
     input:
         script="scripts/sample_elemental_stoich.py",
@@ -71,7 +82,7 @@ rule sample_elemental_stoich:
     output:
         CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
     shell:
-        "python {input.script} --n-samples 1000000 --samples-csv " + CONSTRAINED_ELEMENTAL_STOICH_SAMPLES
+        "python {input.script} --n-samples 10000000 --samples-csv " + CONSTRAINED_ELEMENTAL_STOICH_SAMPLES
 
 
 rule plot_elemental_stoich:
@@ -88,6 +99,7 @@ rule plot_elemental_stoich:
         martiny="data/martiny_table_s2_latitude_metadata.csv",
         vrede_empirical="data/vrede2002_empirical.csv",
         makino_empirical="data/makino2003_empirical.csv",
+        tanioka_empirical="data/tanioka2020_empirical_by_pft.csv",
     output:
         CONSTRAINED_ELEMENTAL_STOICH_PLOT,
     shell:
@@ -95,7 +107,8 @@ rule plot_elemental_stoich:
         "--samples-csv {input.samples_csv} "
         "--plot-path " + CONSTRAINED_ELEMENTAL_STOICH_PLOT + " "
         "--empirical-csv {input.vrede_empirical} --empirical-label 'Vrede 2002' "
-        "--empirical-csv {input.makino_empirical} --empirical-label 'Makino 2003'"
+        "--empirical-csv {input.makino_empirical} --empirical-label 'Makino 2003' "
+        "--empirical-csv {input.tanioka_empirical} --empirical-label 'Tanioka 2020'"
 
 
 rule plot_elemental_stoich_contour:
@@ -112,6 +125,7 @@ rule plot_elemental_stoich_contour:
         martiny="data/martiny_table_s2_latitude_metadata.csv",
         vrede_empirical="data/vrede2002_empirical.csv",
         makino_empirical="data/makino2003_empirical.csv",
+        tanioka_empirical="data/tanioka2020_empirical_by_pft.csv",
     output:
         CONSTRAINED_ELEMENTAL_STOICH_CONTOUR_PLOT,
     shell:
@@ -119,4 +133,5 @@ rule plot_elemental_stoich_contour:
         "--samples-csv {input.samples_csv} "
         "--plot-path " + CONSTRAINED_ELEMENTAL_STOICH_CONTOUR_PLOT + " "
         "--empirical-csv {input.vrede_empirical} --empirical-label 'Vrede 2002' "
-        "--empirical-csv {input.makino_empirical} --empirical-label 'Makino 2003'"
+        "--empirical-csv {input.makino_empirical} --empirical-label 'Makino 2003' "
+        "--empirical-csv {input.tanioka_empirical} --empirical-label 'Tanioka 2020'"
