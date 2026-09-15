@@ -42,7 +42,16 @@ def parse_args() -> argparse.Namespace:
         "--data-dir",
         type=Path,
         default=Path("data"),
-        help="Directory containing numeric input CSV files (default: data).",
+        help="Directory containing raw/source input files (default: data).",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("output"),
+        help=(
+            "Directory containing generated input files -- i.e. the "
+            "transform_moura2013.py outputs (default: output)."
+        ),
     )
     parser.add_argument(
         "--n-samples",
@@ -68,7 +77,7 @@ def parse_args() -> argparse.Namespace:
         default="empirical",
         help=(
             "How to sample protein composition: 'empirical' resamples whole amino-acid "
-            "frequency vectors from real sequenced genomes (data/"
+            "frequency vectors from real sequenced genomes (output/"
             "moura2013_aa_frequencies_by_genome.csv), preserving real inter-amino-acid "
             "covariance; 'observed' draws synthetic per-amino-acid noise from a Dirichlet "
             "distribution centered on the empirical mean; 'range' uses the original "
@@ -124,9 +133,11 @@ def run(args: argparse.Namespace) -> Path:
     aa_codes, residue_element_counts = load_residue_element_counts(
         args.data_dir / "aa_residue_element_counts.json"
     )
-    observed_aa_mean = load_observed_aa_mean(args.data_dir / "moura2013_aa_frequencies.json", aa_codes)
+    observed_aa_mean = load_observed_aa_mean(
+        args.output_dir / "moura2013_aa_frequencies.json", aa_codes
+    )
     empirical_aa_codes, empirical_aa_frequencies = load_aa_frequencies_by_genome(
-        args.data_dir / "moura2013_aa_frequencies_by_genome.csv"
+        args.output_dir / "moura2013_aa_frequencies_by_genome.csv"
     )
     na_residue_element_counts = load_na_residue_element_counts(
         args.data_dir / "na_residue_element_counts.json"

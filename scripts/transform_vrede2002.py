@@ -5,7 +5,7 @@ Input:
 - data/vrede2002_table3.csv (contains mean +- uncertainty strings)
 
 Output:
-- data/vrede2002_empirical.csv with numeric columns:
+- output/vrede2002_empirical.csv with numeric columns:
   C_to_P,N_to_P
 """
 
@@ -70,7 +70,7 @@ def transform(input_csv: Path, output_csv: Path) -> int:
 def main() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     input_csv = repo_root / "data" / "vrede2002_table3.csv"
-    output_csv = repo_root / "data" / "vrede2002_empirical.csv"
+    output_csv = repo_root / "output" / "vrede2002_empirical.csv"
 
     n_rows = transform(input_csv=input_csv, output_csv=output_csv)
     print(f"Wrote {n_rows} rows to {output_csv}")

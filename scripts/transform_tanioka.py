@@ -37,12 +37,12 @@ Output
 Two files, since the full raw data is too dense to plot legibly (468
 points from many correlated repeated measures per study):
 
-- data/tanioka2020_empirical.csv: every paired (C:P, N:P) point, with
+- output/tanioka2020_empirical.csv: every paired (C:P, N:P) point, with
   columns C_to_P,N_to_P,driver,condition,Study,Species,PFT. 'driver' is
   the source tab (P/N/Fe/I/T); 'condition' is 'control' (the
   limited/starting state, Yc) or 'treatment' (the replete/manipulated
   state, Yt); the rest are retained for traceability.
-- data/tanioka2020_empirical_by_pft.csv: one point per plankton
+- output/tanioka2020_empirical_by_pft.csv: one point per plankton
   functional type (PFT), averaged over that PFT's 'control' rows only
   (across all five drivers). 'control' is used rather than both states to
   avoid double-counting -- a study's control and treatment measurements
@@ -170,8 +170,8 @@ def transform(xlsx_path: Path, output_csv: Path, output_by_pft_csv: Path) -> tup
 def main() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     xlsx_path = repo_root / "data" / "tanioka2020_algalCNP_SItable.xlsx"
-    output_csv = repo_root / "data" / "tanioka2020_empirical.csv"
-    output_by_pft_csv = repo_root / "data" / "tanioka2020_empirical_by_pft.csv"
+    output_csv = repo_root / "output" / "tanioka2020_empirical.csv"
+    output_by_pft_csv = repo_root / "output" / "tanioka2020_empirical_by_pft.csv"
 
     n_rows, n_pft = transform(
         xlsx_path=xlsx_path, output_csv=output_csv, output_by_pft_csv=output_by_pft_csv

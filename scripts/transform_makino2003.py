@@ -7,7 +7,7 @@ Input format (long):
   where value_type is one of {C_to_P_ratio, N_to_P_ratio}
 
 Output format (wide, overlay-ready):
-- data/makino2003_empirical.csv with columns:
+- output/makino2003_empirical.csv with columns:
   C_to_P,N_to_P,RNA_content_pct
 
 The phase-diagram loader only requires C_to_P and N_to_P.
@@ -93,7 +93,7 @@ def transform(input_csv: Path, output_csv: Path) -> int:
 def main() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     input_csv = repo_root / "data" / "makino2003_coli.csv"
-    output_csv = repo_root / "data" / "makino2003_empirical.csv"
+    output_csv = repo_root / "output" / "makino2003_empirical.csv"
 
     n_rows = transform(input_csv=input_csv, output_csv=output_csv)
     print(f"Wrote {n_rows} rows to {output_csv}")

@@ -36,7 +36,7 @@ rule transform_vrede2002:
         script="scripts/transform_vrede2002.py",
         table="data/vrede2002_table3.csv",
     output:
-        "data/vrede2002_empirical.csv",
+        "output/vrede2002_empirical.csv",
     shell:
         "python {input.script}"
 
@@ -46,7 +46,7 @@ rule transform_makino2003:
         script="scripts/transform_makino2003.py",
         table="data/makino2003_coli.csv",
     output:
-        "data/makino2003_empirical.csv",
+        "output/makino2003_empirical.csv",
     shell:
         "python {input.script}"
 
@@ -56,8 +56,19 @@ rule transform_tanioka:
         script="scripts/transform_tanioka.py",
         table="data/tanioka2020_algalCNP_SItable.xlsx",
     output:
-        "data/tanioka2020_empirical.csv",
-        "data/tanioka2020_empirical_by_pft.csv",
+        "output/tanioka2020_empirical.csv",
+        "output/tanioka2020_empirical_by_pft.csv",
+    shell:
+        "python {input.script}"
+
+
+rule transform_moura2013:
+    input:
+        script="scripts/transform_moura2013.py",
+        table="data/moura2013_tableS2.xlsx",
+    output:
+        "output/moura2013_aa_frequencies.json",
+        "output/moura2013_aa_frequencies_by_genome.csv",
     shell:
         "python {input.script}"
 
@@ -74,8 +85,8 @@ rule sample_elemental_stoich:
         mass_fraction_ranges="data/mass_fraction_ranges.json",
         element_ranges="data/element_ranges.json",
         aa_residue_element_counts="data/aa_residue_element_counts.json",
-        aa_observed_mean="data/moura2013_aa_frequencies.json",
-        aa_frequencies_by_genome="data/moura2013_aa_frequencies_by_genome.csv",
+        aa_observed_mean="output/moura2013_aa_frequencies.json",
+        aa_frequencies_by_genome="output/moura2013_aa_frequencies_by_genome.csv",
         na_residue_element_counts="data/na_residue_element_counts.json",
         na_gc_content="data/na_gc_content.csv",
         na_pool_mix_mean="data/na_pool_mix_mean.csv",
@@ -97,9 +108,9 @@ rule plot_elemental_stoich:
         ],
         samples_csv=CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
         martiny="data/martiny_table_s2_latitude_metadata.csv",
-        vrede_empirical="data/vrede2002_empirical.csv",
-        makino_empirical="data/makino2003_empirical.csv",
-        tanioka_empirical="data/tanioka2020_empirical_by_pft.csv",
+        vrede_empirical="output/vrede2002_empirical.csv",
+        makino_empirical="output/makino2003_empirical.csv",
+        tanioka_empirical="output/tanioka2020_empirical_by_pft.csv",
     output:
         CONSTRAINED_ELEMENTAL_STOICH_PLOT,
     shell:
@@ -123,9 +134,9 @@ rule plot_elemental_stoich_contour:
         ],
         samples_csv=CONSTRAINED_ELEMENTAL_STOICH_SAMPLES,
         martiny="data/martiny_table_s2_latitude_metadata.csv",
-        vrede_empirical="data/vrede2002_empirical.csv",
-        makino_empirical="data/makino2003_empirical.csv",
-        tanioka_empirical="data/tanioka2020_empirical_by_pft.csv",
+        vrede_empirical="output/vrede2002_empirical.csv",
+        makino_empirical="output/makino2003_empirical.csv",
+        tanioka_empirical="output/tanioka2020_empirical_by_pft.csv",
     output:
         CONSTRAINED_ELEMENTAL_STOICH_CONTOUR_PLOT,
     shell:

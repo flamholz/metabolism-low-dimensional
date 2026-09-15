@@ -34,7 +34,7 @@ class TestDataIO(unittest.TestCase):
         self.assertTrue(np.allclose(pc, expected_pc))
 
     def test_load_vrede_empirical_csv(self) -> None:
-        csv_path = Path("data/vrede2002_empirical.csv")
+        csv_path = Path("output/vrede2002_empirical.csv")
         nc, pc = load_empirical_ratios(csv_path)
 
         # 13 non-empty records in the transformed Vrede table.
@@ -205,7 +205,7 @@ class TestDataIO(unittest.TestCase):
     def test_load_observed_aa_mean_from_repo_data_sums_to_one(self) -> None:
         aa_codes, _ = load_residue_element_counts(Path("data/aa_residue_element_counts.json"))
         observed_aa_mean = load_observed_aa_mean(
-            Path("data/moura2013_aa_frequencies.json"), aa_codes
+            Path("output/moura2013_aa_frequencies.json"), aa_codes
         )
 
         self.assertEqual(set(observed_aa_mean.keys()), set(aa_codes))
@@ -228,7 +228,7 @@ class TestDataIO(unittest.TestCase):
 
     def test_load_aa_frequencies_by_genome_from_repo_data(self) -> None:
         aa_codes, frequencies = load_aa_frequencies_by_genome(
-            Path("data/moura2013_aa_frequencies_by_genome.csv")
+            Path("output/moura2013_aa_frequencies_by_genome.csv")
         )
 
         self.assertEqual(len(aa_codes), 20)

@@ -17,10 +17,10 @@ differential expression.
 
 Output
 ------
-- data/moura2013_aa_frequencies.json: per amino acid, the mean/std/min/max
+- output/moura2013_aa_frequencies.json: per amino acid, the mean/std/min/max
   of its 'f...' frequency across all 1086 genomes (unweighted by domain or
   habitat), plus per-domain genome counts for context.
-- data/moura2013_aa_frequencies_by_genome.csv: the full per-genome table
+- output/moura2013_aa_frequencies_by_genome.csv: the full per-genome table
   (organism, domain, then the 20 rescaled amino-acid frequencies), used to
   sample directly from real genome compositions rather than a synthetic
   distribution around the mean.
@@ -107,7 +107,7 @@ def transform(xlsx_path: Path, output_json: Path, output_csv: Path) -> int:
             "'min'/'max' describe each amino acid's relative frequency across all genomes, "
             "each genome weighted equally regardless of domain or habitat. The full per-genome "
             "table (used for direct empirical resampling rather than a synthetic distribution "
-            "around the mean) is in data/moura2013_aa_frequencies_by_genome.csv."
+            "around the mean) is in output/moura2013_aa_frequencies_by_genome.csv."
         ),
         "n_genomes": n_genomes,
         "n_genomes_by_domain": domain_counts,
@@ -136,8 +136,8 @@ def transform(xlsx_path: Path, output_json: Path, output_csv: Path) -> int:
 def main() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     xlsx_path = repo_root / "data" / "moura2013_tableS2.xlsx"
-    output_json = repo_root / "data" / "moura2013_aa_frequencies.json"
-    output_csv = repo_root / "data" / "moura2013_aa_frequencies_by_genome.csv"
+    output_json = repo_root / "output" / "moura2013_aa_frequencies.json"
+    output_csv = repo_root / "output" / "moura2013_aa_frequencies_by_genome.csv"
 
     n_genomes = transform(xlsx_path=xlsx_path, output_json=output_json, output_csv=output_csv)
     print(f"Wrote amino-acid frequency data from {n_genomes} genomes to:")
